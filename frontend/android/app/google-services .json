@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1090945027872",
+    "firebase_url": "https://bbb-app-664f4-default-rtdb.firebaseio.com",
+    "project_id": "bbb-app-664f4",
+    "storage_bucket": "bbb-app-664f4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1090945027872:android:be84aafc9779cb7e8ed145",
+        "android_client_info": {
+          "package_name": "com.example.bbb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuJA9_lrpZKtwetBmxLkBGiACpxZ1a1uQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

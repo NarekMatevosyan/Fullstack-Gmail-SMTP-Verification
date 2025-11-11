@@ -1,0 +1,11 @@
+const ALLOWED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png'];
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; //5MB IN BYTES
+
+const MAX_IMAGE_WIDTH = 600;
+
+module.exports = {
+  ALLOWED_IMAGE_FORMATS,
+  MAX_IMAGE_SIZE_BYTES,
+  MAX_IMAGE_WIDTH
+}

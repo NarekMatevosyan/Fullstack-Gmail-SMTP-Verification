@@ -1,0 +1,30 @@
+class AppRoutes {
+  static const String onBoardingScreen = '/onboarding';
+  static const String loginScreen = '/login';
+  static const String registerScreen = '/register';
+  static const String mainScreen = '/home';
+  static const String emailVerificationScreen = '/emailVerification';
+  static const String passwordresetScreen = '/passwordreset';
+  static const String exerciseLibraryScreen = '/exerciseLibrary';
+  static const String equipmentLibraryScreen = '/equipmentLibrary';
+  static const String bonusLibraryScreen = '/bonusLibrary';
+  static const String graphAndReportsScreen = '/graphAndReports';
+  static const String exerciseHistory = '/exerciseHistory';
+  static const String nutritionCalculatorScreen = '/nutritionCalculator';
+  static const String dayOverviewScreen = '/dayOverview';
+  static const String todayScreen = '/today';
+  static const String dayCompletedScreen = '/dayCompleted';
+    static const String exerciseScreen = '/exercise';
+  static const String streakScreen = '/streak';
+  static const String recalculateScreen = '/recalculate';
+  static const String calendarScreen = '/calendar';
+  static const String myProfileScreen = '/myprofile';
+  static const String watchTutorialScreen = '/watchtutorial';
+  static const String languageScreen = '/languageScreen';
+  static const String streakCalendarScreen = '/streak-calendar';
+  static const String notificationsScreen = '/notifications';
+  static const String joinChallengeScreen = '/joinChallenge';
+  static const String meetOurStaff = '/meetOurStaff';
+  static const String joinedChallengeScreen = '/joinedChallenge';
+  static const String collectionDetailScreen = '/collectionDetail';
+}
