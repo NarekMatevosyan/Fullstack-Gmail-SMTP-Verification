@@ -84,5 +84,4 @@ Frontend configuration is handled via `lib` constants and Firebase options in `f
 
 Implement an email address verification workflow in the current registration process using Gmail SMTP.
 
-We will evaluate code quality, design sense, and also delivery ti![photo_2025-11-24 23 25 53](https://github.com/user-attachments/assets/88ec20d1-d553-47e8-bc1f-44e9cf05eb08)
-me.
+<img src="https://github.com/user-attachments/assets/88ec20d1-d553-47e8-bc1f-44e9cf05eb08" alt="photo_2025-11-24 23 25 53" height="444" width="auto"/>
