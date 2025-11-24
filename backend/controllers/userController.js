@@ -1,10 +1,12 @@
 const asyncHandler = require("express-async-handler");
+const jwt = require('jsonwebtoken')
 const User = require("../models/userModel");
 const UpdatedMonth = require("../models/updatedWorkoutModel");
 const Exercise = require("../models/exerciseModel");
 const { getEstTime } = require("../utils/date");
 
 const { generateRandomPassword } = require("../utils/randomPasswordGenerator");
+const nodemailer = require('nodemailer');
 const { default: mongoose } = require("mongoose");
 const { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } = require("firebase/auth");
 
@@ -72,28 +74,157 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
+exports.sendVerificationMail = asyncHandler(async (req, res, next) => {
+  const email = req.body.email;
+
+  const token = jwt.sign(
+    { userId: req.params.id },
+    process.env.SMTP_SECRET,
+    { expiresIn: "10m" }
+  );;
+
+  const verifyUrl = `https://5vkwqdph-5004.euw.devtunnels.ms/api/users/verify_email?token=${token}`;
+
+  try {
+    await nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    }).sendMail({
+      from: `"Booty test" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Verify your email",
+      html: `
+    <div style="font-family: Arial, sans-serif; text-align: center;">
+      <h3>Confirm your email</h3>
+      <p>Please click the button below to verify your email address:</p>
+
+      <a href="${verifyUrl}"
+         style="
+           display: inline-block;
+           padding: 12px 24px;
+           margin-top: 16px;
+           background-color: #4CAF50;
+           color: white;
+           text-decoration: none;
+           font-size: 16px;
+           border-radius: 6px;
+           font-weight: bold;
+         ">
+        Verify Email
+      </a>
+    </div>
+  `,
+    });
+
+    res.status(200).send({ message: "Verification email sent" });
+  } catch (e) {
+    res.status(500).send({ message: "Failed to send verification email", issue: e });
+  }
+});
+
+exports.verifyEmail = asyncHandler(async (req, res) => {
+  try {
+    console.log("Verifying email with token:", req.query, req.query.token);
+    const { token } = req.query;
+    res.setHeader("Content-Type", "text/html; charset=UTF-8");
+
+    res.write(`
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Verifying...</title>
+          <style>
+            body { font-family:sans-serif; text-align:center; padding-top:50px; }
+            .spinner { width:50px; height:50px; border:6px solid #ddd; border-top-color:#4CAF50; border-radius:50%; animation:spin 1s linear infinite; margin:20px auto; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+            .hidden { display:none; }
+          </style>
+        </head>
+        <body>
+          <div class="spinner" id="spinner"></div>
+          <h3 id="message">Verifying your email...</h3>
+    `);
+
+    res.flush?.();
+
+    let finalMessage = "";
+    if (!token) {
+      res.statusCode = 400;
+      finalMessage = "Missing token ❌";
+    } else {
+      try {
+        const decoded = jwt.verify(token, process.env.SMTP_SECRET);
+        const user = await User.findById(decoded.userId);
+        console.log("Decoded token:", decoded, "User found:", user);
+        if (!user) {
+          res.statusCode = 404;
+          finalMessage = "User not found ❌";
+        } else if (user.isVerified) {
+          finalMessage = "Email already verified ✅";
+        } else {
+          user.isVerified = true;
+          await user.save();
+          finalMessage = "Email verified successfully ✅";
+        }
+      } catch {
+        res.statusCode = 400;
+        finalMessage = "Invalid or expired token ❌";
+      }
+    }
+
+    res.write(`
+          <script>
+            document.getElementById('spinner').classList.add('hidden');
+            document.getElementById('message').innerText = ${JSON.stringify(finalMessage)};
+          </script>
+        </body>
+      </html>
+    `);
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.statusCode = 500;
+    res.end("<h2>Server error ❌</h2></body></html>");
+  }
+});
+
+exports.checkUserEmailVerified = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  return res.status(200).json({
+    isVerified: user?.isVerified === true
+  });
+});
+
 exports.getUser = asyncHandler(async (req, res, next) => {
   try {
-    const user = await User.findOne({_id: req.params.id});
+    const user = await User.findOne({ _id: req.params.id });
     const userWorkout = await getWorkoutForCurrentMonthHistory(user.uid);
     user.workout = userWorkout;
-    const userResponse = {  
-      _id: user._id,  
-      email: user.email,  
-      uid: user.uid,  
-      role: user.role,  
-      experience: user.experience,  
-      level: user.level,  
-      note: user.note,  
-      avatarUrl: user.avatarUrl,  
-      favorites: user.favorites,  
-      createdAt: user.createdAt,  
-      updatedAt: user.updatedAt,  
-      __v: user.__v,  
-      name: user.name,  
-      workoutsHistory: user.workoutsHistory,  
-      dayHistory: user.dayHistory,  
-      workout: userWorkout 
+    const userResponse = {
+      _id: user._id,
+      email: user.email,
+      uid: user.uid,
+      role: user.role,
+      experience: user.experience,
+      level: user.level,
+      note: user.note,
+      avatarUrl: user.avatarUrl,
+      favorites: user.favorites,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      __v: user.__v,
+      name: user.name,
+      workoutsHistory: user.workoutsHistory,
+      dayHistory: user.dayHistory,
+      workout: userWorkout
     }
     console.log(userResponse);
     res.status(200).json(userResponse);
@@ -102,6 +233,7 @@ exports.getUser = asyncHandler(async (req, res, next) => {
     console.log(error);
   }
 });
+
 const getWorkoutForCurrentMonthHistory = async (id) => {
   try {
     const estNow = getEstTime();
@@ -117,7 +249,7 @@ const getWorkoutForCurrentMonthHistory = async (id) => {
     if (!workout) {
       return false;
     }
-  
+
     let exerciseIds = [];
     workout.weeks.forEach((week) => {
       week.days.forEach((day) => {
@@ -155,9 +287,10 @@ const getWorkoutForCurrentMonthHistory = async (id) => {
     console.error('Error updating workouts:', error);
   }
 };
+
 exports.getUsers = asyncHandler(async (req, res, next) => {
   try {
-    const { search, page = 1, perPage = 10, sortBy} = req.query;
+    const { search, page = 1, perPage = 10, sortBy } = req.query;
 
     const pipeline = [];
 
@@ -201,7 +334,7 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
       },
     };
     pipeline.push(facet);
-    
+
     const results = await User.aggregate(pipeline);
 
     var users = [];
@@ -210,9 +343,9 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
     if (results.length != 0) {
       users = results[0].pipelineUsers;
 
-    //   if (results[0].totalCount.length != 0)
-    //     count = results[0].totalCount[0].totalMatchingDocuments;
-    // }
+      //   if (results[0].totalCount.length != 0)
+      //     count = results[0].totalCount[0].totalMatchingDocuments;
+      // }
     }
     res.status(200).json({ users: users });
   } catch (error) {
@@ -223,7 +356,7 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 exports.updateUser = asyncHandler(async (req, res, next) => {
   try {
     const { detail, deviceToken } = req.body;
-    console.log({detail});
+    console.log({ detail });
     await User.findOneAndUpdate(
       { _id: req.params.id },
       {
@@ -298,10 +431,10 @@ exports.exerciseDone = asyncHandler(async (req, res, next) => {
     if (!user.workoutsHistory) user.workoutsHistory = new Array();
 
     user.workoutsHistory.push({
-      monthIndex : monthIndex,
-      weekIndex : weekIndex,
-      dayId : new mongoose.Types.ObjectId(dayId),
-      exerciseId : new mongoose.Types.ObjectId(exerciseId),
+      monthIndex: monthIndex,
+      weekIndex: weekIndex,
+      dayId: new mongoose.Types.ObjectId(dayId),
+      exerciseId: new mongoose.Types.ObjectId(exerciseId),
       sets: sets,
       reps: reps,
       weight: weight,
@@ -401,24 +534,24 @@ exports.getWorkoutsHistory = asyncHandler(async (req, res, next) => {
   try {
     const { monthIndex, weekIndex, dayIndex, day, daySplit, exercises } = req.body;
     const userId = req.user;
-    const user = await User.findOne({id: userId});
+    const user = await User.findOne({ id: userId });
 
     if (!user.workoutsHistory) user.workoutsHistory = new Array();
     if (!user.workoutsHistory.exercises) user.workoutsHistory.exercises = new Array();
     if (!user.workoutsHistory.exercises.sets) user.workoutsHistory.exercises.sets = new Array();
 
     user.workoutsHistory.push({
-      monthIndex : monthIndex,
-      weekIndex : weekIndex,
-      daySplit : daySplit,
-      dayIndex : dayIndex,
-      day : day,
+      monthIndex: monthIndex,
+      weekIndex: weekIndex,
+      daySplit: daySplit,
+      dayIndex: dayIndex,
+      day: day,
     })
     exercises.map(exercise => {
       user.workoutsHistory.exercises.push(
         {
-        exerciseId: exercise.exerciseId,
-        status: exercise.status,
+          exerciseId: exercise.exerciseId,
+          status: exercise.status,
         }
       )
     });

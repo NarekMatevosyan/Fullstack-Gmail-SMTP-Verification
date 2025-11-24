@@ -44,18 +44,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
       AddUserDetailInfo(emailController.text);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: AppColors.primaryColor,
-          content: Text(
-            "Email Verified Successfully",
-            style: TextStyle(fontSize: 20.0),
-          ),
-        ),
-      );
-
       Navigator.push(context,
-          MaterialPageRoute(builder: (ctx) => const EmailVerificationScreen()));
+          MaterialPageRoute(builder: (ctx) => EmailVerificationScreen(email: emailController.text)));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         showDialog(

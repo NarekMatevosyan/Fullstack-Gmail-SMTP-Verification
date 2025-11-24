@@ -10,6 +10,10 @@ const userSchema = mongoose.Schema(
       required: [true, "Please add an email"],
       unique: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     name: {
       type: String,
     },
